@@ -4,6 +4,7 @@ package com.bignerdranch.android.criminalintent;
 
 import android.content.Context;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +17,8 @@ public class CrimeLab {
     private static CrimeLab sCrimeLab;
     //s prefix means static variable
     private List<Crime> mCrimes;
+    //gab you changed the text of List to ArrayList to see if this fixes things
+    //didn't, so you changed it back
 
     public static CrimeLab get(Context context){
         if (sCrimeLab == null){
