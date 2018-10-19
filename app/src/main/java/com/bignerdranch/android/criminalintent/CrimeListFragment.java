@@ -7,6 +7,7 @@ package com.bignerdranch.android.criminalintent;
 //Boxes dictate what is inside and they get re-used.
 //the machine dictates where they go and how.
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,6 +62,9 @@ public class CrimeListFragment extends Fragment {
         //ie, they are part of the methods that will do the binding.
         private TextView mTitleTextView;
         private TextView mDateTextView;
+        //this next one line is part of the code to control when the handcuff images shows
+        //it will show only when a crime is marked solved.
+        private ImageView mSolvedImageView;
         private Crime mCrime;
 
         public CrimeHolder(LayoutInflater inflater, ViewGroup parent){
@@ -71,6 +76,8 @@ public class CrimeListFragment extends Fragment {
             //the next lines will do the binding:
             mTitleTextView = (TextView) itemView.findViewById(R.id.crime_title);
             mDateTextView = (TextView) itemView.findViewById(R.id.crime_date);
+            //the next line relates to when the handcuffs show
+            mSolvedImageView = (ImageView) itemView.findViewById(R.id.crime_solved);
         }
 
         //this method will bind each crime to the text views:
@@ -82,15 +89,21 @@ public class CrimeListFragment extends Fragment {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getTitle());
             mDateTextView.setText(mCrime.getDate().toString());
+            //this next part toggles the view of the handcuffs
+            //they will show only when a crime is marked solved
+            mSolvedImageView.setVisibility(crime.isSolved() ? View.VISIBLE : View.GONE);
         }
 
         //this method says what to do when a user clicks the View Holder
         //ie, when a user clicks an item on the list
         @Override
         public void onClick(View view){
-            Toast.makeText(getActivity(), mCrime.getTitle() + " clicked!",
-                    Toast.LENGTH_LONG).show();
-            //fyi for now it's a toast, in chapt 10 we'll send user to the details instead
+            //Toast.makeText(getActivity(), mCrime.getTitle() + " clicked!",
+                   // Toast.LENGTH_LONG).show();
+            //toast is deleted to make way for creating new instances of CrimeActivity:
+
+            Intent intent = CrimeActivity.newIntent(getActivity(), mCrime.getId());
+            startActivity(intent);
         }
     }
 
