@@ -53,6 +53,11 @@ public class CrimeActivity extends SingleFragmentActivity {
     //this code also implements the extension of SFA.
     @Override
     protected Fragment createFragment(){
-        return new CrimeFragment();
+        //return new CrimeFragment();
+        //that was coded out so we instead get CrimeActivity's extra and pass it
+        //to the CrimeFragment.newInstance(UUID)
+        UUID crimeId = (UUID) getIntent()
+                .getSerializableExtra(EXTRA_CRIME_ID);
+        return CrimeFragment.newInstance(crimeId);
     }
 }
