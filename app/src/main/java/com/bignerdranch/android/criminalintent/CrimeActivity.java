@@ -2,6 +2,9 @@ package com.bignerdranch.android.criminalintent;
 
 //this is a model
 
+//chapter 10 instructs us to delete this whole file because it's not used anymore
+//I'm leaving it in to save the notes.
+
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.Fragment;

@@ -102,7 +102,11 @@ public class CrimeListFragment extends Fragment {
                    // Toast.LENGTH_LONG).show();
             //toast is deleted to make way for creating new instances of CrimeActivity:
 
-            Intent intent = CrimeActivity.newIntent(getActivity(), mCrime.getId());
+            //next part deleted and replaced with new intent of CrimePagerActivity
+            //ie, we are changing from static to swipeable list
+            //Intent intent = CrimeActivity.newIntent(getActivity(), mCrime.getId());
+            //startActivity(intent);
+            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
             startActivity(intent);
         }
     }

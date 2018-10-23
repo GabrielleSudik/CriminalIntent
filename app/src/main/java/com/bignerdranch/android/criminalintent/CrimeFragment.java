@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -21,6 +22,9 @@ public class CrimeFragment extends Fragment {
 
     //this field is part of the newInstance method for passing crime info to the fragment:
     private static final String ARG_CRIME_ID = "crime_id";
+
+    //this constant is for the date picker
+    private static final String DIALOG_DATE = "Dailog-Date";
 
     //these are more basic, from much earlier in the code creation:
     private Crime mCrime;
@@ -90,7 +94,18 @@ public class CrimeFragment extends Fragment {
         //now date button (set to not allow presses):
         mDateButton = (Button) v.findViewById(R.id.crime_date);
         mDateButton.setText(mCrime.getDate().toString());
-        mDateButton.setEnabled(false);
+        //mDateButton.setEnabled(false);
+        //you coded out that last line to add the following
+        //which will implement the ability to pick dates from the calendar
+        mDateButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                FragmentManager manager = getFragmentManager();
+                DatePickerFragment dialog = new DatePickerFragment();
+                dialog.show(manager, DAILOG_DATE);
+                //why am i getting an error??
+            }
+        });
 
         //checkbox for solved:
         mSolvedCheckBox = (CheckBox) v.findViewById(R.id.crime_solved);
