@@ -24,7 +24,7 @@ public class CrimeFragment extends Fragment {
     private static final String ARG_CRIME_ID = "crime_id";
 
     //this constant is for the date picker
-    private static final String DIALOG_DATE = "Dailog-Date";
+    private static final String DIALOG_DATE = "DialogDate";
 
     //these are more basic, from much earlier in the code creation:
     private Crime mCrime;
@@ -102,8 +102,7 @@ public class CrimeFragment extends Fragment {
             public void onClick(View v){
                 FragmentManager manager = getFragmentManager();
                 DatePickerFragment dialog = new DatePickerFragment();
-                dialog.show(manager, DAILOG_DATE);
-                //why am i getting an error??
+                dialog.show(manager, DIALOG_DATE);
             }
         });
 
