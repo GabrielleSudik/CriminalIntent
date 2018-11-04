@@ -1,5 +1,7 @@
 package com.bignerdranch.android.criminalintent;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -15,6 +17,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
+import java.util.Date;
 import java.util.UUID;
 
 //to convert a class to a subclass of fragment, "extends Fragment"
@@ -31,6 +34,9 @@ public class CrimeFragment extends Fragment {
     private EditText mTitleField;
     private Button mDateButton;
     private CheckBox mSolvedCheckBox;
+
+    //this is to receive the date back from DatePickerFragment:
+    private static final int REQUEST_DATE = 0;
 
     //this method accepts the crime's UUID, creates an arguments bundle,
     //creates an instance of a fragment, then attaches the arguments to the fragment
@@ -93,7 +99,7 @@ public class CrimeFragment extends Fragment {
 
         //now date button (set to not allow presses):
         mDateButton = (Button) v.findViewById(R.id.crime_date);
-        mDateButton.setText(mCrime.getDate().toString());
+        updateDate();
         //mDateButton.setEnabled(false);
         //you coded out that last line to add the following
         //which will implement the ability to pick dates from the calendar
@@ -101,7 +107,12 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onClick(View v){
                 FragmentManager manager = getFragmentManager();
-                DatePickerFragment dialog = new DatePickerFragment();
+                //replace next line with following to make date picker interactive:
+                //DatePickerFragment dialog = new DatePickerFragment();
+                DatePickerFragment dialog = DatePickerFragment.newInstance(mCrime.getDate());
+                //next line sets this controller as the target
+                //for where datepickerfragment will send a new date:
+                dialog.setTargetFragment(CrimeFragment.this, REQUEST_DATE);
                 dialog.show(manager, DIALOG_DATE);
             }
         });
@@ -120,6 +131,24 @@ public class CrimeFragment extends Fragment {
         return v;
     }
 
+    //following method retrieves the date extra sent when DateCrimePicker
+    //allows user to pick new date. It will set this new data as the new date.
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        if (resultCode != Activity.RESULT_OK){
+            return;
+        }
+
+        if (requestCode == REQUEST_DATE){
+            Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
+            mCrime.setDate(date);
+            updateDate();
+        }
+    }
+
+    private void updateDate() {
+        mDateButton.setText(mCrime.getDate().toString());
+    }
 
 
     //fyi, fragment lifecycle methods must be public because
