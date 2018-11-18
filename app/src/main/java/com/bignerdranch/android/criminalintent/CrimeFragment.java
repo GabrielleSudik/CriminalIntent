@@ -2,13 +2,16 @@ package com.bignerdranch.android.criminalintent;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,29 +23,24 @@ import android.widget.EditText;
 import java.util.Date;
 import java.util.UUID;
 
-//to convert a class to a subclass of fragment, "extends Fragment"
+import static android.widget.CompoundButton.*;
+
 public class CrimeFragment extends Fragment {
 
-    //this field is part of the newInstance method for passing crime info to the fragment:
     private static final String ARG_CRIME_ID = "crime_id";
-
-    //this constant is for the date picker
     private static final String DIALOG_DATE = "DialogDate";
 
-    //these are more basic, from much earlier in the code creation:
+    private static final int REQUEST_DATE = 0;
+    private static final int REQUEST_CONTACT = 1;
+
     private Crime mCrime;
     private EditText mTitleField;
     private Button mDateButton;
-    private CheckBox mSolvedCheckBox;
+    private CheckBox mSolvedCheckbox;
+    private Button mReportButton;
+    private Button mSuspectButton;
 
-    //this is to receive the date back from DatePickerFragment:
-    private static final int REQUEST_DATE = 0;
-
-    //this method accepts the crime's UUID, creates an arguments bundle,
-    //creates an instance of a fragment, then attaches the arguments to the fragment
-    //it needs to be in that order because the bundle and fragment must be created
-    //before the arguments can attach to the fragment (makes sense -- you can't attach to nothing!)
-    public static CrimeFragment newInstance(UUID crimeId){
+    public static CrimeFragment newInstance(UUID crimeId) {
         Bundle args = new Bundle();
         args.putSerializable(ARG_CRIME_ID, crimeId);
 
@@ -52,38 +50,23 @@ public class CrimeFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //mCrime = new Crime(); //coded out so we can fetch specific crimes instead:
-        //UUID crimeId = (UUID) getActivity().getIntent()
-           //     .getSerializableExtra(CrimeActivity.EXTRA_CRIME_ID);
-        //that last line will be replaced with:
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
-        //what you did: instead of getting the intent directly from CrimeActivity
-        //you now get fragment arguments, which create and attach their own discrete info
-        //it takes more code, but you can be more specific this way
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
-        //basically, that is calling the intent and the intent's extra -- the crime's ID
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        //return super.onCreateView(inflater, container, savedInstanceState);
-        //that was the line included by the IDE. your re-write:
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_crime, container, false);
 
-        //here are your widgets. based on what you wrote in fragment_crime.xml:
-        //crime title first:
         mTitleField = (EditText) v.findViewById(R.id.crime_title);
-        //this next line shows specific crime info after CrimeFragment fetches a Crime:
         mTitleField.setText(mCrime.getTitle());
         mTitleField.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                //left blank for now
+
             }
 
             @Override
@@ -93,56 +76,122 @@ public class CrimeFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                //left blank for now
+
             }
         });
 
-        //now date button (set to not allow presses):
         mDateButton = (Button) v.findViewById(R.id.crime_date);
         updateDate();
-        //mDateButton.setEnabled(false);
-        //you coded out that last line to add the following
-        //which will implement the ability to pick dates from the calendar
-        mDateButton.setOnClickListener(new View.OnClickListener(){
+        mDateButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 FragmentManager manager = getFragmentManager();
-                //replace next line with following to make date picker interactive:
-                //DatePickerFragment dialog = new DatePickerFragment();
-                DatePickerFragment dialog = DatePickerFragment.newInstance(mCrime.getDate());
-                //next line sets this controller as the target
-                //for where datepickerfragment will send a new date:
+                DatePickerFragment dialog = DatePickerFragment
+                        .newInstance(mCrime.getDate());
                 dialog.setTargetFragment(CrimeFragment.this, REQUEST_DATE);
                 dialog.show(manager, DIALOG_DATE);
             }
         });
 
-        //checkbox for solved:
-        mSolvedCheckBox = (CheckBox) v.findViewById(R.id.crime_solved);
-        //next line checks for solved status for whatever specific crime has been fetched:
-        mSolvedCheckBox.setChecked(mCrime.isSolved());
-        mSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mSolvedCheckbox = (CheckBox) v.findViewById(R.id.crime_solved);
+        mSolvedCheckbox.setChecked(mCrime.isSolved());
+        mSolvedCheckbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onCheckedChanged(CompoundButton buttonView,
+                                         boolean isChecked) {
                 mCrime.setSolved(isChecked);
             }
         });
 
+        //the Report Button will create implicit intents
+        //Android OS will let you choose from a list of possible programs
+        mReportButton = (Button) v.findViewById(R.id.crime_report);
+        mReportButton.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_TEXT, getCrimeReport());
+                i.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject));
+                //the next line is so that when the implicit intent kicks in,
+                //you'll actually have things to choose from
+                i = Intent.createChooser(i, getString(R.string.send_report));
+                startActivity(i);
+            }
+        });
+
+        //here's the implicit intent to pick a suspect from your contacts list:
+        final Intent pickContact = new Intent(Intent.ACTION_PICK,
+                ContactsContract.Contacts.CONTENT_URI);
+        //the following single line is ONLY to test that the
+        //Pick Suspect button will grey out if there is nothing in your contacts list.
+        //pickContact.addCategory(Intent.CATEGORY_HOME);
+        mSuspectButton = (Button) v.findViewById(R.id.crime_suspect);
+        mSuspectButton.setOnClickListener((new View.OnClickListener(){
+            public void onClick(View v){
+                startActivityForResult(pickContact, REQUEST_CONTACT);
+            }
+        }));
+
+        if (mCrime.getSuspect() != null){
+            mSuspectButton.setText(mCrime.getSuspect());
+        }
+
+        //this code guards against the problem of having no contacts in your contacts app:
+        //it won't even show the Pick Suspect button
+        PackageManager packageManager = getActivity().getPackageManager();
+        if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null){
+            mSuspectButton.setEnabled(false);
+        }
+
         return v;
     }
 
-    //following method retrieves the date extra sent when DateCrimePicker
-    //allows user to pick new date. It will set this new data as the new date.
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data){
-        if (resultCode != Activity.RESULT_OK){
+    public void onPause() {
+        super.onPause();
+
+        CrimeLab.get(getActivity())
+                .updateCrime(mCrime);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
             return;
         }
 
-        if (requestCode == REQUEST_DATE){
-            Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
+        if (requestCode == REQUEST_DATE) {
+            Date date = (Date) data
+                    .getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
             updateDate();
+        }
+
+        //this is related to the implicit intent of seeing the contact list to pick a suspect
+        //it will return back the suspect name you choose.
+        else if (requestCode == REQUEST_CONTACT && data != null) {
+            Uri contactUri = data.getData();
+            String[] queryFields = new String[]{
+                    ContactsContract.Contacts.DISPLAY_NAME
+            };
+
+            //the cursor object is like searching the db you made for this app
+            //but it searches the contacts' db
+            Cursor c = getActivity().getContentResolver()
+                    .query(contactUri, queryFields, null, null, null);
+            try {
+
+                if (c.getCount() == 0) {
+                    return;
+                }
+
+                c.moveToFirst();
+                String suspect = c.getString(0);
+                mCrime.setSuspect(suspect);
+                mSuspectButton.setText(suspect);
+            } finally {
+                c.close();
+            }
         }
     }
 
@@ -150,7 +199,30 @@ public class CrimeFragment extends Fragment {
         mDateButton.setText(mCrime.getDate().toString());
     }
 
+    private String getCrimeReport(){
+        String solvedString = null;
+        if (mCrime.isSolved()){
+            solvedString = getString(R.string.crime_report_solved);
+        }
+        else {
+            solvedString = getString(R.string.crime_report_unsolved);
+        }
 
-    //fyi, fragment lifecycle methods must be public because
-    // they are called by the hosting activity (ie, something else)
+        String dateFormat = "EEE, MMM dd";
+        String dateString = DateFormat.format(dateFormat,
+                mCrime.getDate()).toString();
+
+        String suspect = mCrime.getSuspect();
+        if (suspect == null){
+            suspect = getString(R.string.crime_report_no_suspect);
+        }
+        else{
+            suspect = getString(R.string.crime_report_suspect, suspect);
+        }
+
+        String report = getString(R.string.crime_report,
+                mCrime.getTitle(), dateString, solvedString, suspect);
+
+        return report;
+    }
 }
